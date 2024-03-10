@@ -162,10 +162,10 @@
 		exec >$log_output 2>&1
 		unset log_output
 	fi
-maybe_break top $LINENO
+	maybe_break top $LINENO
 
-# Don't do log messages here to avoid confusing graphical boots
-run_scripts /scripts/init-top
+	# Don't do log messages here to avoid confusing graphical boots
+	run_scripts /scripts/init-top
 
 # Load driver modules from conf/modules
 #
@@ -176,18 +176,19 @@ run_scripts /scripts/init-top
 	load_modules
 	mdev -s
 	[ "$quiet" != "y" ] && log_end_msg
-starttime="$(_uptime)"
-starttime=$((starttime + 1)) # round up
-export starttime
+	starttime="$(_uptime)"
+	starttime=$((starttime + 1)) # round up
+	export starttime
 
-if [ "$ROOTDELAY" ]; then
-	sleep "$ROOTDELAY"
-fi
+	if [ "$ROOTDELAY" ]; then
+		sleep "$ROOTDELAY"
+	fi
 
-maybe_break premount $LINENO
-[ "$quiet" != "y" ] && log_begin_msg "Running /scripts/init-premount"
-run_scripts /scripts/init-premount
-[ "$quiet" != "y" ] && log_end_msg
+	maybe_break premount $LINENO
+	[ "$quiet" != "y" ] && log_begin_msg "Running /scripts/init-premount"
+	run_scripts /scripts/init-premount
+	[ "$quiet" != "y" ] && log_end_msg
+
 	maybe_break plymouth $LINENO
 
 	load_plymouth
@@ -305,12 +306,13 @@ run_scripts /scripts/init-premount
 #
 
 # Mount cleanup
-mount_bottom
-maybe_break bottom $LINENO
-[ "$quiet" != "y" ] && log_begin_msg "Running /scripts/init-bottom"
-# We expect udev's init-bottom script to move /dev to ${rootmnt}/dev
-run_scripts /scripts/init-bottom
-[ "$quiet" != "y" ] && log_end_msg
+	mount_bottom
+
+	maybe_break bottom $LINENO
+	[ "$quiet" != "y" ] && log_begin_msg "Running /scripts/init-bottom"
+	# We expect udev's init-bottom script to move /dev to ${rootmnt}/dev
+	run_scripts /scripts/init-bottom
+	[ "$quiet" != "y" ] && log_end_msg
 
 
 # umount boot partition
