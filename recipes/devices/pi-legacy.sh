@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2034
-
 ## Setup for Raspberry Pi
 DEVICE_SUPPORT_TYPE="S" # First letter (Community Porting|Supported Officially|OEM)
 DEVICE_STATUS="T"       # First letter (Planned|Test|Maintenance)
@@ -16,10 +15,10 @@ BUILD="arm"
 #VOL_DEVICE_ID="pi"
 DEVICENAME="Raspberry Pi"
 # This is useful for multiple devices sharing the same/similar kernel
-DEVICEFAMILY="raspberry"
+#DEVICEFAMILY="raspberry"
 
-# Install to disk tools including PiInstaller 
-DEVICEREPO="https://github.com/volumio/platform-${DEVICEFAMILY}.git"
+# Disable to ensure the script doesn't look for `platform-xxx`
+#DEVICEREPO=""
 
 ### What features do we want to target
 # TODO: Not fully implemented
@@ -31,11 +30,10 @@ VOLINITUPDATER=yes
 BOOT_START=0
 BOOT_END=96
 BOOT_TYPE=msdos  # msdos or gpt
-BOOT_USE_UUID=yes        # Add UUID to fstab
 INIT_TYPE="initv2" # init.{x86/nextarm/nextarm_tvbox}
 
-# Modules that will be added to initramfs
-MODULES=("overlay" "squashfs" "fuse" "nvme" "nvme_core" "uas")
+# Modules that will be added to intramfs
+MODULES=("overlay" "squashfs")
 # Packages that will be installed
 PACKAGES=(# Bluetooth packages
 	"bluez" "bluez-firmware" "pi-bluetooth"
@@ -48,38 +46,12 @@ PACKAGES=(# Bluetooth packages
 	"plymouth" "plymouth-themes"
 	# Wireless firmware
 	"firmware-atheros" "firmware-ralink" "firmware-realtek" "firmware-brcm80211"
-	# Install to disk tools
-	"liblzo2-2" "squashfs-tools"
 )
 
 ### Device customisation
 # Copy the device specific files (Image/DTS/etc..)
 write_device_files() {
-	log "Running write_device_files" "ext"
-	log "Copying additional utils files"
-	pkg_root="${PLTDIR}/utils"
-
-	mkdir -p "${ROOTFSMNT}"/usr/local/bin/
-		declare -A CustomScripts=(
-		[PiInstaller.sh]="/PiInstaller.sh"
-	)
-	log "Adding ${#CustomScripts[@]} custom scripts to /usr/local/bin: " "" "${CustomScripts[@]}"
-		for script in "${!CustomScripts[@]}"; do
-			cp "${pkg_root}/${CustomScripts[$script]}" "${ROOTFSMNT}"/usr/local/bin/"${script}"
-			chmod +x "${ROOTFSMNT}"/usr/local/bin/"${script}"
-		done
-
-	log "Copying current partition data for use in runtime fast 'installToDisk'"
-	cat <<-EOF >"${ROOTFSMNT}/boot/partconfig.json"
-{
-	"params":[
-	{"name":"boot_start","value":"$BOOT_START"},
-	{"name":"boot_end","value":"$BOOT_END"},
-	{"name":"volumio_end","value":"$IMAGE_END"},
-	{"name":"boot_type","value":"$BOOT_TYPE"}
-	]
-}
-	EOF
+	:
 }
 
 write_device_bootloader() {
@@ -134,9 +106,9 @@ device_image_tweaks() {
 		Pin: release *
 		Pin-Priority: -1
 
-		Package: libraspberrypi0
-		Pin: release *
-		Pin-Priority: -1
+                Package: libraspberrypi0
+                Pin: release *
+                Pin-Priority: -1
 	EOF
 
 	log "Fetching rpi-update" "info"
@@ -158,8 +130,8 @@ device_chroot_tweaks() {
 # Will be run in chroot - Pre initramfs
 # TODO Try and streamline this!
 device_chroot_tweaks_pre() {
-	log "Changing initramfs module config to 'modules=list' to limit volumio.initrd size" "cfg"
-	sed -i "s/MODULES=most/MODULES=list/g" /etc/initramfs-tools/initramfs.conf
+        log "Changing initramfs module config to 'modules=list' to limit volumio.initrd size" "cfg"
+        sed -i "s/MODULES=most/MODULES=list/g" /etc/initramfs-tools/initramfs.conf
 
 	## Define parameters
 	declare -A PI_KERNELS=(
@@ -176,9 +148,7 @@ device_chroot_tweaks_pre() {
 		[5.10.73]="1597995e94e7ba3cd8866d249e6df1cf9a790e49|master|1470"
 		[5.10.90]="9a09c1dcd4fae55422085ab6a87cc650e68c4181|master|1512"
 		[5.10.92]="ea9e10e531a301b3df568dccb3c931d52a469106|stable|1514"
-		[5.10.95]="770ca2c26e9cf341db93786d3f03c89964b1f76f|master|1521"
 		[5.15.84]="a99e144e939bf93bbd03e8066601a8d3eae640f7|stable|1613"
-		[5.15.92]="f5c4fc199c8d8423cb427e509563737d1ac21f3c|master|1627"
 		[6.1.19]="fa51258e0239eaf68d9dff9c156cec3a622fbacc|stable|1637"
 		[6.1.21]="f87ad1a3cb8c81e32dc3d541259291605ddaada0|stable|1642"
 		[6.1.47]="f87ad1a3cb8c81e32dc3d541259291605ddaada0|stable|1674"
@@ -191,10 +161,6 @@ device_chroot_tweaks_pre() {
 	)
 	# Version we want
 	KERNEL_VERSION="6.1.69"
-
-	MAJOR_VERSION=$(echo "$KERNEL_VERSION" | cut -d '.' -f 1)
-	MINOR_VERSION=$(echo "$KERNEL_VERSION" | cut -d '.' -f 2)
-	PATCH_VERSION=$(echo "$KERNEL_VERSION" | cut -d '.' -f 3)
 
 	# For bleeding edge, check what is the latest on offer
 	# Things *might* break, so you are warned!
@@ -226,8 +192,6 @@ device_chroot_tweaks_pre() {
 		[TauDAC]="https://github.com/taudac/modules/archive/rpi-volumio-${KERNEL_VERSION}-taudac-modules.tar.gz"
 		[Bassowl]="https://raw.githubusercontent.com/Darmur/bassowl-hat/master/driver/archives/modules-rpi-${KERNEL_VERSION}-bassowl.tar.gz"
 		[wm8960]="https://raw.githubusercontent.com/hftsai256/wm8960-rpi-modules/main/wm8960-modules-rpi-${KERNEL_VERSION}.tar.gz"
-		[brcmfmac43430b0]="https://raw.githubusercontent.com/volumio/volumio3-os-static-assets/master/firmwares/brcmfmac43430b0/brcmfmac43430b0.tar.gz"
-		[PiCustom]="https://raw.githubusercontent.com/Darmur/volumio-rpi-custom/main/output/modules-rpi-${KERNEL_VERSION}-custom.tar.gz"
 	)
 
 	### Kernel installation
@@ -263,21 +227,16 @@ device_chroot_tweaks_pre() {
 		rm -rf /boot/kernel_2712.img
 		rm -rf "/lib/modules/${KERNEL_VERSION}-v8_16k+"
 	fi
-	if [ -d "/lib/modules/${KERNEL_VERSION}-v8-16k+" ]; then
-		log "Removing v8-16k+ (Pi5 16k) Kernel and modules" "info"
-		rm -rf /boot/kernel_2712.img
-		rm -rf "/lib/modules/${KERNEL_VERSION}-v8-16k+"
-	fi
 
 	log "Finished Kernel installation" "okay"
 
 	### Other Rpi specific stuff
 	log "Installing fake libraspberrypi0 package"
-	wget -nv  https://github.com/volumio/volumio3-os-static-assets/raw/master/custom-packages/libraspberrypi0/libraspberrypi0_1.20230509-buster-1_armhf.deb
-	dpkg -i libraspberrypi0_1.20230509-buster-1_armhf.deb
-	rm libraspberrypi0_1.20230509-buster-1_armhf.deb
+        wget -nv  https://github.com/volumio/volumio3-os-static-assets/raw/master/custom-packages/libraspberrypi0/libraspberrypi0_1.20230509-buster-1_armhf.deb
+        dpkg -i libraspberrypi0_1.20230509-buster-1_armhf.deb
+        rm libraspberrypi0_1.20230509-buster-1_armhf.deb
 
-	## Lets update some packages from raspbian repos now
+        ## Lets update some packages from raspbian repos now
 	apt-get update && apt-get -y upgrade
 
 	NODE_VERSION=$(node --version)
@@ -354,16 +313,10 @@ device_chroot_tweaks_pre() {
 		ln -s "/opt/vc/bin/${bin}" "/usr/bin/${bin}"
 	done
 
-	log "Fixing vcgencmd permissions"  "info"
+	log "Fixing vcgencmd permissions"
 	cat <<-EOF >/etc/udev/rules.d/10-vchiq.rules
 		SUBSYSTEM=="vchiq",GROUP="video",MODE="0660"
 	EOF
-
-	# Rename gpiomem in udev rules if kernel is equal or greater than 6.1.54
-	if [ "$MAJOR_VERSION" -gt 6 ] || { [ "$MAJOR_VERSION" -eq 6 ] && { [ "$MINOR_VERSION" -gt 1 ] || [ "$MINOR_VERSION" -eq 1 ] && [ "$PATCH_VERSION" -ge 54 ]; }; }; then
-		log "Rename gpiomem in udev rules"  "info"
-		sed -i 's/bcm2835-gpiomem/gpiomem/g' /etc/udev/rules.d/99-com.rules
-	fi
 
 	log "Setting bootparms and modules" "info"
 	log "Enabling i2c-dev module"
@@ -371,32 +324,9 @@ device_chroot_tweaks_pre() {
 
 	log "Writing config.txt file"
 	cat <<-EOF >/boot/config.txt
-		### DO NOT EDIT THIS FILE ###
-		### APPLY CUSTOM PARAMETERS TO userconfig.txt ###
 		initramfs volumio.initrd
-		gpu_mem=128
-		gpu_mem_256=32
-		gpu_mem_512=32
-		gpu_mem_1024=128
-		max_usb_current=1
-		[pi5]
-		usb_max_current_enable=1
-		[all]
-		include volumioconfig.txt
-		include userconfig.txt
-	EOF
-
-	log "Writing volumioconfig.txt file"
-	cat <<-EOF >/boot/volumioconfig.txt
-		### DO NOT EDIT THIS FILE ###
-		### APPLY CUSTOM PARAMETERS TO userconfig.txt ###
 		[cm4]
 		dtoverlay=dwc2,dr_mode=host
-		[pi5]
-		dtoverlay=vc4-kms-v3d-pi5
-		# dtparam=uart0_console # Disabled by default
-		dtparam=nvme
-		dtparam=pciex1_gen=2
 		[all]
 		arm_64bit=0
 		gpu_mem=32
@@ -425,11 +355,11 @@ device_chroot_tweaks_pre() {
 		# Output console device and options.
 		"quiet" "console=serial0,115200" "console=tty1"
 		# Image params
-		"imgpart=UUID=${UUID_IMG} imgfile=/volumio_current.sqsh bootpart=UUID=${UUID_BOOT} datapart=UUID=${UUID_DATA} bootconfig=cmdline.txt"
-		# A quirk of Linux on ARM that may result in suboptimal performance
-		"pcie_aspm=off" "pci=pcie_bus_safe"
+		"imgpart=/dev/mmcblk0p2" "imgfile=/volumio_current.sqsh"
 		# Wait for root device
 		"rootwait" "bootdelay=5"
+		# I/O scheduler
+		"elevator=noop"
 		# Disable linux logo during boot
 		"logo.nologo"
 		# Disable cursor
