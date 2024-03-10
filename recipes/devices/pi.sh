@@ -3,7 +3,7 @@
 ## Setup for Raspberry Pi
 DEVICE_SUPPORT_TYPE="S" # First letter (Community Porting|Supported Officially|OEM)
 DEVICE_STATUS="T"       # First letter (Planned|Test|Maintenance)
-DEBUG_IMAGE="yes"
+DEBUG_IMAGE="no"
 
 # Base system
 BASE="Raspbian"
@@ -154,9 +154,13 @@ device_chroot_tweaks_pre() {
 		[6.1.47]="f87ad1a3cb8c81e32dc3d541259291605ddaada0|stable|1674"
 		[6.1.57]="12833d1bee03c4ac58dc4addf411944a189f1dfd|master|1688" # Support for Pi5
 		[6.1.58]="7b859959a6642aff44acdfd957d6d66f6756021e|master|1690"
+		[6.1.61]="d1ba55dafdbd33cfb938bca7ec325aafc1190596|master|1696"
+		[6.1.64]="01145f0eb166cbc68dd2fe63740fac04d682133e|master|1702"
+		[6.1.69]="ec8e8136d773de83e313aaf983e664079cce2815|master|1710"
+		[6.1.70]="fc9319fda550a86dc6c23c12adda54a0f8163f22|master|1712"
 	)
 	# Version we want
-	KERNEL_VERSION="6.1.58"
+	KERNEL_VERSION="6.1.69"
 
 	# For bleeding edge, check what is the latest on offer
 	# Things *might* break, so you are warned!
