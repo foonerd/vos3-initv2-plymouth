@@ -171,6 +171,9 @@
 	load_modules
 	mdev -s
 	[ "$quiet" != "y" ] && log_end_msg
+starttime="$(_uptime)"
+starttime=$((starttime + 1)) # round up
+export starttime
 
 	maybe_break plymouth $LINENO
 
