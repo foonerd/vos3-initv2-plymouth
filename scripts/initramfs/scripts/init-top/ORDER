@@ -1,0 +1,4 @@
+/scripts/init-top/keymap "$@"
+[ -e /conf/param.conf ] && . /conf/param.conf
+/scripts/init-top/udev "$@"
+[ -e /conf/param.conf ] && . /conf/param.conf
