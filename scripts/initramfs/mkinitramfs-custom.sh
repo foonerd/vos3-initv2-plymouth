@@ -548,7 +548,7 @@ build_initrd() {
   # Add additional init scripts (in case there are any)
   if [ -d /root/scripts ]; then
     mkdir "${DESTDIR}/scripts"
-    cp /root/scripts/* "${DESTDIR}/scripts/"
+    cp -pdR /root/scripts/* "${DESTDIR}/scripts/"
   fi
   cp /root/init "${DESTDIR}"
   cd "${DESTDIR}"
