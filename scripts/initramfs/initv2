@@ -19,7 +19,7 @@
 	export IMAGE_PARTITION=
 	export NEWINIT=/sbin/init
 	export REBOOT_MODE="normal"
-	export SPLASH="false"
+	export SPLASH="flase"
 	export USEKMSG="yes"
 	export DATADEV=
 	export UUIDFMT=
@@ -168,14 +168,13 @@
 	maybe_break modules $LINENO
 
 	[ "$quiet" != "y" ] && log_begin_msg "Loading essential drivers"
+	[ -n "${netconsole}" ] && /sbin/modprobe netconsole netconsole="${netconsole}"
 	load_modules
 	mdev -s
 	[ "$quiet" != "y" ] && log_end_msg
 starttime="$(_uptime)"
 starttime=$((starttime + 1)) # round up
 export starttime
-
-	maybe_break plymouth $LINENO
 
 	load_plymouth
 
@@ -290,7 +289,6 @@ export starttime
 
 # All done, switch to the permanent init process
 #
-
 # umount boot partition
   umount ${BOOTMNT}
   rm -r ${BOOTMNT}
