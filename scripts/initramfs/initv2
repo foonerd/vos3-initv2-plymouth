@@ -59,6 +59,16 @@
 	fi
 	export quiet
 
+	# Note that this only becomes /dev on the real filesystem if udev's scripts
+	# are used; which they will be, but it's worth pointing out
+	mount -t devtmpfs -o nosuid,mode=0755 udev /dev
+
+	# Prepare the /dev directory
+	[ ! -h /dev/fd ] && ln -s /proc/self/fd /dev/fd
+	[ ! -h /dev/stdin ] && ln -s /proc/self/fd/0 /dev/stdin
+	[ ! -h /dev/stdout ] && ln -s /proc/self/fd/1 /dev/stdout
+	[ ! -h /dev/stderr ] && ln -s /proc/self/fd/2 /dev/stderr
+
 	mkdir /dev/pts
 	mount -t devpts -o noexec,nosuid,gid=5,mode=0620 devpts /dev/pts || true
 
