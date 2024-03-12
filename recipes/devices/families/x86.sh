@@ -128,7 +128,7 @@ write_device_files() {
 EOF
 
   rm ${ROOTFSMNT}/usr/share/plymouth/themes/volumio/*
-  cp -dR volumio/usr/share/plymouth/themes/volumio-v2/* ${ROOTFSMNT}/usr/share/plymouth/themes/volumio
+  cp -dR volumio/usr/share/plymouth/themes/volumio/* ${ROOTFSMNT}/usr/share/plymouth/themes/volumio
 
   # Headphone detect currently only for atom z8350 with rt5640 codec
   # Evaluate additional requirements when they arrive

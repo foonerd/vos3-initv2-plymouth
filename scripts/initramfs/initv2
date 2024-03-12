@@ -38,8 +38,8 @@
 	[ -d /proc ] || mkdir /proc
 	[ -d /tmp ] || mkdir /tmp
 	mkdir -p /var/lock
-	mount -t sysfs none /sys
-	mount -t proc none /proc
+	mount -t sysfs -o noexec,nosuid sysfs /sys
+	mount -t proc -o nodev,noexec,nosuid proc /proc
 	
 # shellcheck disable=SC2013
 	for x in $(cat /proc/cmdline); do
@@ -155,7 +155,7 @@
 		esac
 	done
 
-	mount -t tmpfs -o "noexec,nosuid,size=${RUNSIZE:-10%},mode=0755" tmpfs /run
+	mount -t tmpfs -o "nodev,noexec,nosuid,size=${RUNSIZE:-10%},mode=0755" tmpfs /run
 	mkdir -m 0755 /run/initramfs
 
 	if [ -n "$log_output" ]; then
@@ -189,9 +189,12 @@
 	run_scripts /scripts/init-premount
 	[ "$quiet" != "y" ] && log_end_msg
 
-	maybe_break plymouth $LINENO
+	maybe_break mount $LINENO
 
-	load_plymouth
+	# Always load local (since this might be needed for /etc or
+	# /usr, irrespective of the boot script used to mount the rootfs).
+	mount_top
+	mount_premount
 
 #
 # Initialise squashfile parameter and partition devices
@@ -294,25 +297,19 @@
 
 	modify_fstab
 
-# Move /run to the root so our logs are there when we boot
-#
-	mount -n -o move /run ${NEWROOT}/run
-
-# Notify plymouth of new root
-#
-	/bin/plymouth --newroot=${NEWROOT}
-
 # All done, switch to the permanent init process
 #
 
 # Mount cleanup
 	mount_bottom
-
 	maybe_break bottom $LINENO
 	[ "$quiet" != "y" ] && log_begin_msg "Running /scripts/init-bottom"
 	# We expect udev's init-bottom script to move /dev to ${rootmnt}/dev
 	run_scripts /scripts/init-bottom
 	[ "$quiet" != "y" ] && log_end_msg
+# Move /run to the root so our logs are there when we boot
+#
+	mount -n -o move /run ${NEWROOT}/run
 
 
 # umount boot partition
@@ -320,6 +317,11 @@
   rm -r ${BOOTMNT}
 
 	maybe_break switch-root $LINENO
+# Move virtual filesystems over to the real filesystem
+	mount -n -o move /sys ${NEWROOT}/sys
+	mount -n -o move /proc ${NEWROOT}/proc
 
 	log_success_msg "Finish initramfs, continue booting Volumio"
 	exec switch_root ${NEWROOT} ${NEWINIT}
+	echo "Something went badly wrong in the initramfs."
+	panic "Please file a bug on Volumio forum."
